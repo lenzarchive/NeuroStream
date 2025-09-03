@@ -128,7 +128,6 @@ A sophisticated full-stack web application built with Next.js 14, featuring user
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
-- `npm test` - Run tests
 
 ### Database Management
 
@@ -206,10 +205,11 @@ docker run -p 3000:3000 \
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Clone to your local machine (`git clone https://github.com/YOUR_USERNAME/neurostream.git`)
+3. Make your changes directly
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to main branch (`git push origin main`)
+6. Create a Pull Request from your fork
 
 ### Code Style
 
@@ -218,19 +218,6 @@ docker run -p 3000:3000 \
 - Write meaningful commit messages
 - Add tests for new features
 - Update documentation as needed
-
-## Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-```
 
 ## Monitoring
 
