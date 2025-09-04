@@ -128,7 +128,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>NeuroStream - Advanced Social Platform</title>
+        <title>NeuroStream - Social Platform</title>
         <meta name="description" content="Next-gen social platform with neural-inspired design" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
