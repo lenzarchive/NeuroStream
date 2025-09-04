@@ -13,9 +13,15 @@ export const generateToken = (userId: string): string => {
   return jwt.sign({ userId }, process.env.NEXTAUTH_SECRET!, { expiresIn: '1d' })
 }
 
-export const verifyToken = (token: string): any => {
+interface JWTPayload {
+  userId: string
+  iat?: number
+  exp?: number
+}
+
+export const verifyToken = (token: string): JWTPayload | null => {
   try {
-    return jwt.verify(token, process.env.NEXTAUTH_SECRET!)
+    return jwt.verify(token, process.env.NEXTAUTH_SECRET!) as JWTPayload
   } catch {
     return null
   }
