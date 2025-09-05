@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { io } from 'socket.io-client'
 
 interface User {
   id: string
@@ -39,6 +40,27 @@ export default function Home() {
     }
     
     fetchPosts()
+  }, [])
+
+  useEffect(() => {
+    const socket = io({ path: '/api/socket.io' })
+
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server')
+    })
+
+    socket.on('newPost', (newPost: Post) => {
+      console.log('New post received:', newPost)
+      setPosts(prevPosts => [newPost, ...prevPosts])
+    })
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server')
+    })
+
+    return () => {
+      socket.disconnect()
+    }
   }, [])
 
   const fetchPosts = async () => {

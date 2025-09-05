@@ -1,8 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { db } from '../../../lib/db'
 import { verifyToken } from '../../../lib/auth'
+import { Server } from 'socket.io'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+interface NextApiRequestWithSocket extends NextApiRequest {
+  io?: Server;
+}
+
+export default async function handler(req: NextApiRequestWithSocket, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
       const posts = await db.post.findMany({
@@ -47,6 +52,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         include: { author: { select: { name: true } } }
       })
+
+      if (req.io) {
+        req.io.emit('newPost', post)
+      }
 
       res.status(201).json(post)
     } catch (error) {
