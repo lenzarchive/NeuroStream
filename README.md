@@ -205,7 +205,7 @@ docker run -p 3000:3000 \
 ## Contributing
 
 1. Fork the repository
-2. Clone to your local machine (`git clone https://github.com/yourname/neurostream.git`)
+2. Clone to your local machine (`git clone https://github.com/yourname/neurostream.git`) or from my repo (`git clone https://github.com/lenzarchive/neurostream.git`)
 3. Make your changes directly
 4. Commit your changes (`git commit -m 'Add amazing feature'`)
 5. Push to main branch (`git push origin main`)
