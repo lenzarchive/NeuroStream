@@ -102,7 +102,8 @@ A sophisticated full-stack web application built with Next.js 14, featuring user
 │   │   └── posts/         # Posts API endpoints
 │   └── index.tsx          # Main application page
 ├── prisma/
-│   └── schema.prisma      # Database schema
+│   └── production.prisma      # Database schema production
+│   └── development.prisma     # Database schema development
 ├── styles/
 │   └── globals.css        # Global styles
 ├── Dockerfile             # Docker configuration
