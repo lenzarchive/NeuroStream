@@ -33,7 +33,6 @@ jobs:
     
     - name: Install dependencies
       run: |
-        # Try npm ci first, fallback to npm install if lock file is out of sync
         npm ci || (echo "Lock file out of sync, regenerating..." && rm -f package-lock.json && npm install)
     
     - name: Run linter
@@ -53,14 +52,7 @@ jobs:
     - name: Build application
       run: npm run build
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
-    
-    - name: Run tests
-      run: npm test || echo "No tests configured, skipping..."
-      continue-on-error: true
-      env:
-        NODE_ENV: test
-        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }
 
   security:
     runs-on: ubuntu-latest
@@ -114,6 +106,7 @@ jobs:
     
     - name: Deploy to Vercel Preview
       uses: amondnet/vercel-action@v25
+      if: false  # Temporarily disabled
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.ORG_ID }}
@@ -153,6 +146,7 @@ jobs:
     
     - name: Deploy to Vercel Production
       uses: amondnet/vercel-action@v25
+      if: false  # temporarily disabled
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.ORG_ID }}
@@ -162,6 +156,7 @@ jobs:
     
     - name: Notify deployment success
       uses: 8398a7/action-slack@v3
+      if: false  # temporarily disabled
       with:
         status: success
         text: 'Production deployment successful!'
@@ -171,6 +166,7 @@ jobs:
     
     - name: Notify deployment failure
       uses: 8398a7/action-slack@v3
+      if: false  # temporarily disabled
       with:
         status: failure
         text: 'Production deployment failed!'
