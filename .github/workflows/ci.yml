@@ -52,7 +52,7 @@ jobs:
     - name: Build application
       run: npm run build
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }
+        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
   security:
     runs-on: ubuntu-latest
@@ -146,7 +146,7 @@ jobs:
     
     - name: Deploy to Vercel Production
       uses: amondnet/vercel-action@v25
-      if: false  # temporarily disabled
+      if: false  # Temporarily disabled
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.ORG_ID }}
@@ -155,21 +155,19 @@ jobs:
         scope: ${{ secrets.VERCEL_ORG_ID }}
     
     - name: Notify deployment success
+      if: false  # Temporarily disabled
       uses: 8398a7/action-slack@v3
-      if: false  # temporarily disabled
       with:
         status: success
         text: 'Production deployment successful!'
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      if: success()
     
     - name: Notify deployment failure
+      if: false  # Temporarily disabled
       uses: 8398a7/action-slack@v3
-      if: false  # temporarily disabled
       with:
         status: failure
         text: 'Production deployment failed!'
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      if: failure()
