@@ -42,19 +42,24 @@ jobs:
     - name: Setup test database
       run: |
         cp .env.example .env || echo "No .env.example found, continuing..."
-        npx prisma generate
-        npx prisma db push
+        npx prisma generate --schema=./prisma/development.prisma
+        npx prisma db push --schema=./prisma/development.prisma
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
     
     - name: Run type checking
       run: npx tsc --noEmit
     
     - name: Build application
       run: npm run build
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
     
     - name: Run tests
       run: npm test
       env:
         NODE_ENV: test
+        DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
   security:
     runs-on: ubuntu-latest
@@ -102,6 +107,7 @@ jobs:
     - name: Build for preview
       run: npm run build
       env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET_PREVIEW }}
         NEXTAUTH_URL: ${{ secrets.PREVIEW_URL }}
     
@@ -133,13 +139,14 @@ jobs:
         npm ci || (echo "Lock file out of sync, regenerating..." && rm -f package-lock.json && npm install)
     
     - name: Run database migrations
-      run: npx prisma db push
+      run: npx prisma db push --schema=./prisma/production.prisma
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}
     
     - name: Build for production
       run: npm run build
       env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
     
