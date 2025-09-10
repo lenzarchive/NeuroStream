@@ -14,8 +14,12 @@ module.exports = {
           600: '#2563eb',
           700: '#1d4ed8',
         }
-      }
+      },
     },
+    screens: {
+      'xs': '480px',
+      ...require('tailwindcss/defaultConfig').theme.screens,
+    }
   },
   plugins: [],
 }

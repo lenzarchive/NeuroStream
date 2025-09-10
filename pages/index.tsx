@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import Script from 'next/script'
 import { io } from 'socket.io-client'
 
 interface User {
@@ -16,6 +17,17 @@ interface Post {
   createdAt: string
 }
 
+interface Turnstile {
+  reset: () => void;
+}
+
+declare global {
+  interface Window {
+    turnstile: Turnstile;
+    turnstileCallback: (token: string) => void;
+  }
+}
+
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -25,10 +37,17 @@ export default function Home() {
     email: '',
     password: '',
     title: '',
-    content: ''
+    content: '',
+    turnstileToken: ''
   })
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+  const [isVerifyingTurnstile, setIsVerifyingTurnstile] = useState(true);
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token')
@@ -40,6 +59,15 @@ export default function Home() {
     }
     
     fetchPosts()
+
+    window.turnstileCallback = (token: string) => {
+      setFormData(prev => ({ ...prev, turnstileToken: token }))
+      setIsVerifyingTurnstile(false);
+    }
+
+    return () => {
+      delete window.turnstileCallback
+    }
   }, [])
 
   useEffect(() => {
@@ -85,7 +113,10 @@ export default function Home() {
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'cf-turnstile-response': formData.turnstileToken
+        },
         body: JSON.stringify(payload)
       })
 
@@ -98,11 +129,13 @@ export default function Home() {
           localStorage.setItem('token', data.token)
           localStorage.setItem('user', JSON.stringify(data.user))
         }
-        setFormData({ name: '', email: '', password: '', title: '', content: '' })
+        setFormData({ name: '', email: '', password: '', title: '', content: '', turnstileToken: '' })
       } else {
         alert(data.message)
+        window.turnstile.reset();
+        setIsVerifyingTurnstile(true);
       }
-    } catch (error) {
+    } catch {
       alert('Something went wrong')
     } finally {
       setIsLoading(false)
@@ -133,7 +166,7 @@ export default function Home() {
       } else {
         alert(data.message)
       }
-    } catch (error) {
+    } catch {
       alert('Failed to create post')
     } finally {
       setIsLoading(false)
@@ -155,6 +188,7 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
 
       <div className="min-h-screen bg-black relative overflow-hidden">
         {/* Animated Background */}
@@ -171,14 +205,14 @@ export default function Home() {
         <main className="relative z-10">
           {/* Navigation */}
           <nav className="backdrop-blur-xl bg-white/5 border-b border-white/10">
-            <div className="max-w-7xl mx-auto px-6 py-4">
-              <div className="flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+              <div className="flex items-center justify-between flex-wrap xs:flex-nowrap">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <div className="w-6 h-6 bg-white rounded opacity-90"></div>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                       NeuroStream
                     </h1>
                     <p className="text-xs text-gray-400">Neural Social Platform</p>
@@ -186,8 +220,8 @@ export default function Home() {
                 </div>
                 
                 {user && (
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
+                  <div className="flex items-center space-x-4 mt-4 xs:mt-0 w-full xs:w-auto">
+                    <div className="text-right flex-grow xs:flex-grow-0">
                       <p className="text-white font-medium">{user.name}</p>
                       <p className="text-gray-400 text-sm">Connected</p>
                     </div>
@@ -203,24 +237,24 @@ export default function Home() {
             </div>
           </nav>
 
-          <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
             {!user ? (
               <div className="max-w-md mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-teal-400 bg-clip-text text-transparent mb-4">
+                <div className="text-center mb-8 sm:mb-12">
+                  <h2 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-teal-400 bg-clip-text text-transparent mb-4">
                     Welcome to the Future
                   </h2>
-                  <p className="text-gray-300 text-lg">
+                  <p className="text-base sm:text-lg text-gray-300">
                     Experience the next evolution of social interaction
                   </p>
                 </div>
 
-                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
                   {/* Tab Switcher */}
                   <div className="flex mb-8 p-1 bg-black/40 rounded-2xl">
                     <button
                       onClick={() => setIsLogin(true)}
-                      className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
+                      className={`flex-1 py-3 px-4 sm:px-6 rounded-xl font-medium transition-all duration-300 text-sm sm:text-base ${
                         isLogin 
                           ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/25' 
                           : 'text-gray-400 hover:text-white'
@@ -230,7 +264,7 @@ export default function Home() {
                     </button>
                     <button
                       onClick={() => setIsLogin(false)}
-                      className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
+                      className={`flex-1 py-3 px-4 sm:px-6 rounded-xl font-medium transition-all duration-300 text-sm sm:text-base ${
                         !isLogin 
                           ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/25' 
                           : 'text-gray-400 hover:text-white'
@@ -240,7 +274,7 @@ export default function Home() {
                     </button>
                   </div>
 
-                  <form onSubmit={handleAuth} className="space-y-6">
+                  <form onSubmit={handleAuth} className="space-y-4 sm:space-y-6">
                     {!isLogin && (
                       <div className="space-y-2">
                         <label className="text-gray-300 text-sm font-medium">Neural Identity</label>
@@ -249,7 +283,7 @@ export default function Home() {
                           placeholder="Enter your neural identity"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
+                          className="w-full p-3 sm:p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
                           required
                         />
                       </div>
@@ -262,7 +296,7 @@ export default function Home() {
                         placeholder="neural@address.stream"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
+                        className="w-full p-3 sm:p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
                         required
                       />
                     </div>
@@ -274,15 +308,25 @@ export default function Home() {
                         placeholder="Enter security key"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
+                        className="w-full p-3 sm:p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
                         required
                       />
                     </div>
+
+                    {isClient && (
+                      <div className="flex justify-center">
+                        <div
+                          className="cf-turnstile"
+                          data-sitekey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
+                          data-callback="turnstileCallback"
+                        ></div>
+                      </div>
+                    )}
                     
                     <button
                       type="submit"
-                      disabled={isLoading}
-                      className="w-full py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:transform-none"
+                      disabled={isLoading || isVerifyingTurnstile}
+                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -299,20 +343,20 @@ export default function Home() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Create Post */}
-                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-                  <div className="flex items-center space-x-3 mb-8">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                  <div className="flex items-center space-x-3 mb-6 sm:mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-lg">
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">Neural Broadcast</h3>
-                      <p className="text-gray-400">Share your thoughts to the stream</p>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">Neural Broadcast</h3>
+                      <p className="text-sm text-gray-400">Share your thoughts to the stream</p>
                     </div>
                   </div>
 
-                  <form onSubmit={handleCreatePost} className="space-y-6">
+                  <form onSubmit={handleCreatePost} className="space-y-4 sm:space-y-6">
                     <div className="space-y-2">
                       <label className="text-gray-300 text-sm font-medium">Stream Title</label>
                       <input
@@ -320,7 +364,7 @@ export default function Home() {
                         placeholder="What's streaming through your mind?"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
+                        className="w-full p-3 sm:p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
                         required
                       />
                     </div>
@@ -332,14 +376,14 @@ export default function Home() {
                         value={formData.content}
                         onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                         rows={4}
-                        className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 resize-none"
+                        className="w-full p-3 sm:p-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 resize-none"
                       />
                     </div>
                     
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-4 bg-gradient-to-r from-teal-500 to-green-500 text-white font-semibold rounded-xl shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50"
+                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-teal-500 to-green-500 text-white font-semibold rounded-xl shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50"
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -354,11 +398,11 @@ export default function Home() {
                 </div>
 
                 {/* Neural Stream Feed */}
-                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-                  <div className="flex items-center justify-between mb-8">
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                  <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div>
-                      <h3 className="text-xl font-bold text-white">Neural Stream</h3>
-                      <p className="text-gray-400">Live consciousness feed</p>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">Neural Stream</h3>
+                      <p className="text-sm text-gray-400">Live consciousness feed</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -371,19 +415,19 @@ export default function Home() {
                       posts.map((post, index) => (
                         <div 
                           key={post.id} 
-                          className="bg-black/30 border border-white/5 rounded-2xl p-6 hover:bg-black/40 transition-all duration-300 transform hover:scale-[1.02] animate-fadeInUp"
+                          className="bg-black/30 border border-white/5 rounded-2xl p-4 sm:p-6 hover:bg-black/40 transition-all duration-300 transform hover:scale-[1.02] animate-fadeInUp"
                           style={{ animationDelay: `${index * 100}ms` }}
                         >
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
+                              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold text-sm">
                                   {post.author.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                               <div>
                                 <p className="text-white font-medium">{post.author.name}</p>
-                                <p className="text-gray-500 text-sm">
+                                <p className="text-gray-500 text-xs sm:text-sm">
                                   {new Date(post.createdAt).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
@@ -395,12 +439,12 @@ export default function Home() {
                             </div>
                           </div>
                           
-                          <h4 className="text-white font-semibold text-lg mb-3">
+                          <h4 className="text-white font-semibold text-base sm:text-lg mb-3">
                             {post.title}
                           </h4>
                           
                           {post.content && (
-                            <p className="text-gray-300 leading-relaxed">
+                            <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
                               {post.content}
                             </p>
                           )}
@@ -465,6 +509,17 @@ export default function Home() {
         
         .animate-fadeInUp {
           animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .cf-turnstile > iframe {
+          transition: transform 0.3s ease-in-out;
+        }
+
+        @media (max-width: 479px) {
+          .cf-turnstile {
+            transform: scale(0.8);
+            transform-origin: center;
+          }
         }
       `}</style>
     </>

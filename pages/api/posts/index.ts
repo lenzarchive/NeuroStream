@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequestWithSocket, res: NextAp
       }
 
       res.status(201).json(post)
-    } catch (error) {
+    } catch {
       res.status(500).json({ message: 'Failed to create post' })
     }
   } 

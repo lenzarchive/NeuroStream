@@ -1,10 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { db } from '../../../lib/db'
 import { verifyPassword, generateToken } from '../../../lib/auth'
+import { verifyTurnstile } from '../../../lib/turnstile'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' })
+  }
+
+  const turnstileVerified = await verifyTurnstile(req)
+
+  if (!turnstileVerified) {
+    return res.status(400).json({ message: 'Captcha verification failed' })
   }
 
   const { email, password } = req.body
@@ -33,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       token,
       user: { id: user.id, name: user.name, email: user.email }
     })
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Internal server error' })
   }
 }
